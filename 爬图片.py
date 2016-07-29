@@ -38,15 +38,22 @@ def dl(name,did,imurl):#下载图片
 def getalbumurl(u):#获取本列表页所有合集地址。参数u为列表页地址.tag
     ww(page(u))#写本地缓存
     soup=BeautifulSoup(open('url.html'),'html.parser')
-    div=BeautifulSoup(str(soup.find_all('div','mode_box')[0]),'html.parser')
-    i=0
-    urllist=[]
-    while i<len(div.find_all('dt')):
-        url=div.find_all('dt')[i].a['href']
-        urllist.append(url)
-        i=i+1
-    os.remove('url.html')#清除缓存
-    return urllist
+    try:
+        div=BeautifulSoup(str(soup.find_all('div','mode_box')[0]),'html.parser')
+    except:
+        try:
+            div=BeautifulSoup(str(soup.find_all('div','lb_box')[0]),'html.parser')
+        except:
+            div=BeautifulSoup(str(soup.find_all('div','star_box')[0]),'html.parser')
+    finally:
+        i=0
+        urllist=[]
+        while i<len(div.find_all('dt')):
+            url=div.find_all('dt')[i].a['href']
+            urllist.append(url)
+            i=i+1
+        os.remove('url.html')#清除缓存
+        return urllist
 
 def getccalbumurl(u):#获取本列表页所有合集地址。参数u为列表页地址.cc
     ww(page(u))#写本地缓存
@@ -64,10 +71,15 @@ def getccalbumurl(u):#获取本列表页所有合集地址。参数u为列表页
 def getpagenum(u):#获取当前页码
     ww(page(u))#写本地缓存
     soup=BeautifulSoup(open('url.html'),'html.parser')
-    div=BeautifulSoup(str(soup.find_all('div','flym')[0]),'html.parser')
-    pagen=int(div.span.string)
-    os.remove('url.html')
-    return pagen#当前页码
+    try:
+        div=BeautifulSoup(str(soup.find_all('div','flym')[0]),'html.parser')
+        pagen=int(div.span.string)
+    except:
+        os.remove('url.html')
+        return 1
+    else:
+        os.remove('url.html')
+        return pagen#当前页码
     
 def getnextpage(u):#获取下一列表页地址
     ww(page(u))#写本地缓存
@@ -121,18 +133,26 @@ def dlalbum(url,ddid,did):#下载一个图片合集
         i=i+1
         #print('OK')
 
+def getfirsturl(keyw):#获取起始列表页地址
+    ww(page('http://pic.yesky.com/tag/'))
+    soup=BeautifulSoup(open('url.html'),'lxml')
+    furl=soup.find_all('a',string=keyw)[0]['href']
+    return furl
+
 ww(page('http://pic.yesky.com/tag/'))
 soup=BeautifulSoup(open('url.html'),'lxml')
 
-ff=re.compile('http://pic.yesky.com/tag/'+r'.+')
-cc=re.compile('http://pic.yesky.com/c/'+r'.+')
+ff=re.compile('http://pic.yesky.com/tag/'+r'.+')#标签正则变异
+cc=re.compile('http://pic.yesky.com/c/'+r'.+')#分类正则编译
 
 fzong=soup.find_all('a',href=ff)
-tags=[i.string for i in fzong]
+tags=[i.string for i in fzong]#标签list
 
 czong=soup.find_all('a',href=cc)
-ccs=[i.string for i in czong]
+ccs=[i.string for i in czong]#分类list
+
 os.remove('url.html')
+
 print('标签列表如下：\n')
 print(tags)
 print('\n')
@@ -140,16 +160,22 @@ print('分类列表如下：\n')
 print(ccs)
 print('\n\n')
 
-
-kik=input('来来来，挑一个标签名称,输入后，猛击回车：')
+kik=input('来来来，挑一个,输入后，猛击回车：')
 mulu=input('现在，给文件夹起一个名字，确认好后，猛击回车：')
-startpage=input('从第几页开始？（输入一个数字，建议为1，猛击回车）')
-url='http://pic.yesky.com/tag/meinv/'+startpage+'/'+urllib.parse.quote(kik)+'/'
+
+url=getfirsturl(kik)
 p=getpagenum(url)
 
+   
 while p:
     try:
+#        try:
         L=getalbumurl(url)
+#            print('这是个tag')
+#        except:
+#            L=getccalbumurl(url)
+#            print('这是个分类')
+#        finally:
         p=getpagenum(url)
     except:
         print(Exception)
